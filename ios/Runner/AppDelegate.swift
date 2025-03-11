@@ -10,29 +10,23 @@ import UIKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Create the heart rate module
-    heartRateModule = HeartRateModule()
-    
     // Get the Flutter view controller
     let controller = window?.rootViewController as! FlutterViewController
     
-    // Register the event channel for heart rate data
+    // Set up the heart rate event channel
     let heartRateChannel = FlutterEventChannel(
       name: "com.example.heart_rate_assessment/heart_rate",
       binaryMessenger: controller.binaryMessenger
     )
     
-    // Set the event handler for the channel
-    heartRateChannel.setStreamHandler(heartRateModule)
-    
-    // Optional: Add method channel for controlling the heart rate module
-    let methodChannel = FlutterMethodChannel(
+    // Set up the heart rate control method channel
+    let heartRateControlChannel = FlutterMethodChannel(
       name: "com.example.heart_rate_assessment/heart_rate_control",
       binaryMessenger: controller.binaryMessenger
     )
     
     // Handle method calls from Flutter
-    methodChannel.setMethodCallHandler { [weak self] (call, result) in
+    heartRateControlChannel.setMethodCallHandler { [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
       guard let self = self else { return }
       
       switch call.method {
@@ -46,6 +40,12 @@ import UIKit
         result(FlutterMethodNotImplemented)
       }
     }
+    
+    // Create the heart rate module
+    heartRateModule = HeartRateModule()
+    
+    // Register the event channel for heart rate data
+    heartRateChannel.setStreamHandler(heartRateModule)
     
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)

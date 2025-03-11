@@ -97,6 +97,12 @@ class HeartRateAnalysisService {
 
   /// Get the animation speed for heart beat visualization
   static Duration getHeartBeatAnimationDuration(int heartRate) {
+    // Ensure we never divide by zero
+    if (heartRate <= 0) {
+      return const Duration(
+          milliseconds: 1000); // Default to 1 second for invalid heart rates
+    }
+
     // Convert BPM to milliseconds per beat
     final millisPerBeat = 60000 ~/ heartRate;
     return Duration(milliseconds: millisPerBeat);
