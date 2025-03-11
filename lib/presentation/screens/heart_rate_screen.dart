@@ -5,7 +5,6 @@ import 'dart:developer' as developer;
 
 import '../providers/heart_rate_provider.dart';
 import '../widgets/heart_rate_display.dart';
-import '../widgets/monitoring_control.dart';
 
 /// Main screen for heart rate monitoring
 class HeartRateScreen extends HookConsumerWidget {
