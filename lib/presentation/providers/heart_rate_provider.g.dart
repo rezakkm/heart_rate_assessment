@@ -7,7 +7,7 @@ part of 'heart_rate_provider.dart';
 // **************************************************************************
 
 String _$heartRateDataSourceHash() =>
-    r'b70b40784a2d3dc9797e2c23a90efc5736912378';
+    r'02aff915637e7f3ac42aace3d0c4c9c553f2da4a';
 
 /// Provider for the heart rate data source
 ///
@@ -28,7 +28,7 @@ final heartRateDataSourceProvider =
 // ignore: unused_element
 typedef HeartRateDataSourceRef = AutoDisposeProviderRef<HeartRateDataSource>;
 String _$heartRateRepositoryHash() =>
-    r'58615672342ab15e8fc2cc3946673d05b2d733be';
+    r'68e9de9942ac53ae346db6ba047375b2a17322c7';
 
 /// Provider for the heart rate repository
 ///

@@ -12,13 +12,13 @@ part 'heart_rate_provider.g.dart';
 
 /// Provider for the heart rate data source
 @riverpod
-HeartRateDataSource heartRateDataSource(HeartRateDataSourceRef ref) {
+HeartRateDataSource heartRateDataSource(Ref ref) {
   return HeartRateDataSourceImpl();
 }
 
 /// Provider for the heart rate repository
 @riverpod
-HeartRateRepository heartRateRepository(HeartRateRepositoryRef ref) {
+HeartRateRepository heartRateRepository(Ref ref) {
   final dataSource = ref.watch(heartRateDataSourceProvider);
   return HeartRateRepositoryImpl(dataSource);
 }
