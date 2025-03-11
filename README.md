@@ -23,7 +23,7 @@
   <img src="screenshots/normal_heart_rate.png" width="200" alt="Normal Heart Rate"/>
   <img src="screenshots/elevated_heart_rate.png" width="200" alt="Elevated Heart Rate"/>
   <img src="screenshots/low_heart_rate.png" width="200" alt="Low Heart Rate"/>
-  <img src="screenshots/device_connection.png" width="200" alt="Device Connection"/>
+  <img src="screenshots/high_heart_rate.png" width="200" alt="Device Connection"/>
 </p>
 
 ## Features
