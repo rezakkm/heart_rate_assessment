@@ -27,41 +27,31 @@ class HeartRateDisplay extends ConsumerWidget {
         developer.log('HeartRateDisplay received data: $eitherData',
             name: 'HeartRateDisplay');
         return eitherData.fold(
-          (failure) {
-            developer.log('HeartRateDisplay failure: ${failure.message}',
-                name: 'HeartRateDisplay');
-            return _buildErrorWidget(failure);
-          },
-          (heartRateData) => _buildHeartRateWidget(heartRateData),
+          (failure) => _buildErrorWidget(context, failure),
+          (heartRateData) => _buildHeartRateWidget(context, heartRateData),
         );
       },
       loading: () {
         developer.log('HeartRateDisplay is in loading state',
             name: 'HeartRateDisplay');
-        return const Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Waiting for heart rate data...'),
-            ],
-          ),
-        );
+        return _buildLoadingWidget(context);
       },
       error: (error, stackTrace) {
         developer.log('HeartRateDisplay error: $error',
             name: 'HeartRateDisplay', error: error, stackTrace: stackTrace);
         return _buildErrorWidget(
+          context,
           UnexpectedFailure('Stream error: ${error.toString()}'),
         );
       },
     );
   }
 
-  Widget _buildHeartRateWidget(HeartRateEntity heartRateData) {
+  Widget _buildHeartRateWidget(
+      BuildContext context, HeartRateEntity heartRateData) {
     final formattedTime = _formatTime(heartRateData.timestamp);
-    final heartRate = heartRateData.heartRate;
+    final heartRate =
+        heartRateData.heartRate <= 0 ? 60 : heartRateData.heartRate;
     final heartRateColor =
         HeartRateAnalysisService.getHeartRateColor(heartRate);
     final heartRateStatus =
@@ -76,80 +66,179 @@ class HeartRateDisplay extends ConsumerWidget {
         name: 'HeartRateDisplay');
 
     return Card(
-      elevation: 4,
+      elevation: 3,
+      shadowColor: heartRateColor.withOpacity(0.3),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: heartRateColor.withOpacity(0.5), width: 2),
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: heartRateColor.withOpacity(0.3), width: 1.5),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Current Heart Rate',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
+      child: Stack(
+        children: [
+          // Background decoration
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _HeartRateBackgroundPainter(
+                color: heartRateColor.withOpacity(0.05),
               ),
             ),
-            const SizedBox(height: 20),
-            _HeartBeatIndicator(
-              color: heartRateColor,
-              animationDuration: animationDuration,
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+          ),
+
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  '$heartRate',
-                  style: TextStyle(
-                    fontSize: 60,
-                    fontWeight: FontWeight.bold,
-                    color: heartRateColor,
+                // Title and heart icon
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Current Heart Rate',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Heart beat animation
+                _HeartBeatIndicator(
+                  color: heartRateColor,
+                  animationDuration: animationDuration,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Heart rate value
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      '$heartRate',
+                      style: TextStyle(
+                        fontSize: 70,
+                        fontWeight: FontWeight.bold,
+                        color: heartRateColor,
+                      ),
+                    ),
+                    Text(
+                      ' BPM',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                // Status indicator
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: heartRateColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Text(
+                    heartRateStatus,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: heartRateColor,
+                    ),
                   ),
                 ),
+
+                const SizedBox(height: 20),
+
+                // Analysis text
                 Text(
-                  ' BPM',
+                  heartRateAnalysis,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 16,
                     color: Colors.grey[700],
+                    height: 1.4,
                   ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Last updated
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.access_time_rounded,
+                      size: 14,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Last updated: $formattedTime',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 15),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: heartRateColor.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                heartRateStatus,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: heartRateColor,
-                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingWidget(BuildContext context) {
+    return Card(
+      elevation: 3,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(40.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: 80,
+              width: 80,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Theme.of(context).colorScheme.primary,
+                backgroundColor:
+                    Theme.of(context).colorScheme.primary.withOpacity(0.1),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Text(
-              heartRateAnalysis,
+              'Connecting to Device',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Please wait while we establish a connection...',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Last updated: $formattedTime',
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
+                color: Colors.grey[600],
               ),
             ),
           ],
@@ -158,39 +247,58 @@ class HeartRateDisplay extends ConsumerWidget {
     );
   }
 
-  Widget _buildErrorWidget(Failure failure) {
+  Widget _buildErrorWidget(BuildContext context, Failure failure) {
     return Card(
-      elevation: 4,
+      elevation: 3,
+      shadowColor: Theme.of(context).colorScheme.error.withOpacity(0.3),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.red.withOpacity(0.5), width: 2),
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.error.withOpacity(0.3),
+          width: 1.5,
+        ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(32.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.error_outline,
-              color: Colors.red,
-              size: 60,
+            Icon(
+              Icons.error_outline_rounded,
+              color: Theme.of(context).colorScheme.error,
+              size: 70,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
             Text(
-              'Error: ${failure.message}',
-              style: const TextStyle(
-                color: Colors.red,
+              'Connection Error',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              failure.message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey[700],
                 fontSize: 16,
               ),
-              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
               onPressed: () {
-                // This is a simple way to trigger a rebuild
-                developer.log('Retry button pressed', name: 'HeartRateDisplay');
+                // Retry logic could go here
               },
-              child: const Text('Retry'),
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Retry Connection'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
             ),
           ],
         ),
@@ -283,4 +391,44 @@ class _HeartBeatIndicatorState extends State<_HeartBeatIndicator>
       },
     );
   }
+}
+
+// A custom painter for drawing a subtle wave pattern background
+class _HeartRateBackgroundPainter extends CustomPainter {
+  final Color color;
+
+  _HeartRateBackgroundPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+
+    // Create a subtle wave pattern
+    path.moveTo(0, size.height * 0.7);
+
+    for (int i = 0; i < 3; i++) {
+      // Draw waves with varying heights
+      path.quadraticBezierTo(
+        size.width * (0.1 + i * 0.3),
+        size.height * (0.7 + (i % 2 == 0 ? 0.1 : -0.1)),
+        size.width * (0.2 + i * 0.3),
+        size.height * 0.7,
+      );
+    }
+
+    path.lineTo(size.width, size.height * 0.7);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_HeartRateBackgroundPainter oldDelegate) =>
+      oldDelegate.color != color;
 }

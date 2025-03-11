@@ -6,7 +6,6 @@ import 'dart:developer' as developer;
 import '../providers/heart_rate_provider.dart';
 import '../widgets/heart_rate_display.dart';
 import '../widgets/monitoring_control.dart';
-import '../../core/error/failures.dart';
 
 /// Main screen for heart rate monitoring
 class HeartRateScreen extends HookConsumerWidget {
@@ -18,113 +17,237 @@ class HeartRateScreen extends HookConsumerWidget {
 
     // Watch the heart rate stream
     final heartRateStream = ref.watch(heartRateStreamProvider);
-    developer.log(
-        'Heart rate stream state: ${heartRateStream.valueOrNull != null ? "has value" : "no value yet"}',
-        name: 'HeartRateScreen');
 
     // Watch the monitoring state
     final isMonitoring = ref.watch(heartRateMonitoringProvider);
-    developer.log('Monitoring state: $isMonitoring', name: 'HeartRateScreen');
 
     // Get the notifier for controlling monitoring
     final monitoringController = ref.read(heartRateMonitoringProvider.notifier);
 
     // Use a hook to handle the initial start of monitoring
     useEffect(() {
-      developer.log('HeartRateScreen mounted, starting monitoring',
-          name: 'HeartRateScreen');
-
       // Start monitoring when the screen is first shown
       Future.microtask(() async {
-        developer.log('Starting heart rate monitoring (screen init)',
-            name: 'HeartRateScreen');
         await monitoringController.startMonitoring();
-        developer.log('Monitoring started from screen init',
-            name: 'HeartRateScreen');
       });
 
       // Stop monitoring when the screen is disposed
       return () {
-        developer.log('HeartRateScreen disposing, stopping monitoring',
-            name: 'HeartRateScreen');
         monitoringController.stopMonitoring();
       };
     }, const []);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Heart Rate Monitor'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: const Text(
+          'Heart Monitor',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline_rounded),
+            onPressed: () {
+              // Show info/help dialog
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('About Heart Monitor'),
+                  content: const Text(
+                    'This app monitors your heart rate in real-time. '
+                    'The data is collected from your connected heart rate monitor device.',
+                  ),
+                  actions: [
+                    TextButton(
+                      child: const Text('Close'),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Diagnostic info
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).colorScheme.primary.withOpacity(0.05),
+              Theme.of(context).colorScheme.background,
+              Theme.of(context).colorScheme.background,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Status indicator
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 500),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: isMonitoring
+                          ? Theme.of(context)
+                              .colorScheme
+                              .tertiary
+                              .withOpacity(0.15)
+                          : Theme.of(context)
+                              .colorScheme
+                              .error
+                              .withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isMonitoring
+                            ? Theme.of(context).colorScheme.tertiary
+                            : Theme.of(context).colorScheme.error,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          'Monitoring Status: ${isMonitoring ? "Active" : "Inactive"}',
-                          style: TextStyle(
-                            color: isMonitoring ? Colors.green : Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Icon(
+                          isMonitoring ? Icons.wifi : Icons.wifi_off,
+                          color: isMonitoring
+                              ? Theme.of(context).colorScheme.tertiary
+                              : Theme.of(context).colorScheme.error,
+                          size: 20,
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(width: 8),
                         Text(
-                          'Stream Status: ${heartRateStream.valueOrNull != null ? "Receiving Data" : "Awaiting Data"}',
+                          isMonitoring
+                              ? 'Monitoring Active'
+                              : 'Monitoring Inactive',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: isMonitoring
+                                ? Theme.of(context).colorScheme.tertiary
+                                : Theme.of(context).colorScheme.error,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 30),
+                  const SizedBox(height: 24),
 
-                // Heart rate display widget
-                HeartRateDisplay(heartRateStream: heartRateStream),
+                  // Heart rate display widget
+                  HeartRateDisplay(heartRateStream: heartRateStream),
 
-                const SizedBox(height: 40),
+                  const SizedBox(height: 32),
 
-                // Monitoring control widget
-                MonitoringControl(
-                  isMonitoring: isMonitoring,
-                  onStartMonitoring: () {
-                    developer.log('Start monitoring button pressed',
-                        name: 'HeartRateScreen');
-                    monitoringController.startMonitoring();
-                  },
-                  onStopMonitoring: () {
-                    developer.log('Stop monitoring button pressed',
-                        name: 'HeartRateScreen');
-                    monitoringController.stopMonitoring();
-                  },
-                ),
-
-                const SizedBox(height: 20),
-
-                // Manual refresh button
-                ElevatedButton.icon(
-                  onPressed: () {
-                    developer.log('Manual refresh requested',
-                        name: 'HeartRateScreen');
-                    // Force a restart of the monitoring
-                    monitoringController.stopMonitoring().then((_) {
-                      Future.delayed(const Duration(milliseconds: 500), () {
-                        monitoringController.startMonitoring();
-                      });
-                    });
-                  },
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Force Refresh'),
-                )
-              ],
+                  // Monitoring control widget (with updated design)
+                  Card(
+                    elevation: 0,
+                    color: Theme.of(context).colorScheme.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.2),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Monitoring Controls',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: isMonitoring
+                                      ? null
+                                      : () {
+                                          monitoringController
+                                              .startMonitoring();
+                                        },
+                                  icon: const Icon(Icons.play_arrow_rounded),
+                                  label: const Text('Start'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        Theme.of(context).colorScheme.tertiary,
+                                    foregroundColor: Colors.white,
+                                    disabledBackgroundColor: Theme.of(context)
+                                        .colorScheme
+                                        .tertiary
+                                        .withOpacity(0.5),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: !isMonitoring
+                                      ? null
+                                      : () {
+                                          monitoringController.stopMonitoring();
+                                        },
+                                  icon: const Icon(Icons.stop_rounded),
+                                  label: const Text('Stop'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        Theme.of(context).colorScheme.error,
+                                    foregroundColor: Colors.white,
+                                    disabledBackgroundColor: Theme.of(context)
+                                        .colorScheme
+                                        .error
+                                        .withOpacity(0.5),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                // Force a restart of the monitoring
+                                monitoringController.stopMonitoring().then((_) {
+                                  Future.delayed(
+                                      const Duration(milliseconds: 500), () {
+                                    monitoringController.startMonitoring();
+                                  });
+                                });
+                              },
+                              icon: const Icon(Icons.refresh_rounded),
+                              label: const Text('Refresh Connection'),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
