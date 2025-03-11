@@ -3,19 +3,18 @@
 // part 'heart_rate_entity.freezed.dart';
 
 import 'dart:developer' as developer;
+import 'package:heart_rate_assessment/domain/entities/device_info_entity.dart';
 
 /// Entity representing heart rate data with device information
 class HeartRateEntity {
   final int heartRate;
   final DateTime timestamp;
-  final DeviceEntity? device;
-  final int connectionQuality;
+  final DeviceInfoEntity? deviceInfo;
 
   HeartRateEntity({
     required this.heartRate,
     required this.timestamp,
-    this.device,
-    this.connectionQuality = 100,
+    this.deviceInfo,
   });
 
   /// Create a HeartRateEntity from a map received from the platform channel
@@ -23,7 +22,7 @@ class HeartRateEntity {
     developer.log('Creating HeartRateEntity from map: $map',
         name: 'HeartRateEntity');
 
-    // Parse heart rate - handle different types
+    // Extract heart rate
     int heartRate = 0;
     if (map['heartRate'] is int) {
       heartRate = map['heartRate'] as int;
@@ -33,11 +32,11 @@ class HeartRateEntity {
       heartRate = int.tryParse(map['heartRate'] as String) ?? 0;
     }
 
-    // Parse timestamp - handle different types
+    // Extract timestamp
     DateTime timestamp = DateTime.now();
     if (map['timestamp'] is double) {
       timestamp = DateTime.fromMillisecondsSinceEpoch(
-        (map['timestamp'] as double).toInt() * 1000,
+        ((map['timestamp'] as double) * 1000).toInt(),
       );
     } else if (map['timestamp'] is int) {
       timestamp =
@@ -48,39 +47,22 @@ class HeartRateEntity {
       timestamp = DateTime.fromMillisecondsSinceEpoch(milliseconds.toInt());
     }
 
-    // Parse connection quality
-    int connectionQuality = 100;
-    if (map.containsKey('connectionQuality')) {
-      if (map['connectionQuality'] is int) {
-        connectionQuality = map['connectionQuality'] as int;
-      } else if (map['connectionQuality'] is double) {
-        connectionQuality = (map['connectionQuality'] as double).toInt();
-      }
+    // Extract device info if present
+    DeviceInfoEntity? deviceInfo;
+    if (map['device'] is Map) {
+      deviceInfo = DeviceInfoEntity.fromMap(
+          Map<String, dynamic>.from(map['device'] as Map));
     }
-
-    // Parse device information if available
-    DeviceEntity? device;
-    if (map.containsKey('device') && map['device'] is Map) {
-      try {
-        device = DeviceEntity.fromMap(
-            Map<String, dynamic>.from(map['device'] as Map));
-      } catch (e) {
-        developer.log('Error parsing device data: $e', name: 'HeartRateEntity');
-      }
-    }
-
-    final entity = HeartRateEntity(
-      heartRate: heartRate,
-      timestamp: timestamp,
-      device: device,
-      connectionQuality: connectionQuality,
-    );
 
     developer.log(
-        'Created HeartRateEntity: HR=${entity.heartRate}, time=${entity.timestamp}, device=${entity.device?.name}',
+        'Created HeartRateEntity: heartRate=$heartRate, timestamp=$timestamp, deviceInfo=${deviceInfo != null}',
         name: 'HeartRateEntity');
 
-    return entity;
+    return HeartRateEntity(
+      heartRate: heartRate,
+      timestamp: timestamp,
+      deviceInfo: deviceInfo,
+    );
   }
 }
 
