@@ -1,0 +1,10 @@
+This folder should contain the following screenshot files for your README:
+
+1. normal_heart_rate.png - Heart rate in normal range (60-100 BPM)
+2. elevated_heart_rate.png - Heart rate in elevated range (100-120 BPM)
+3. low_heart_rate.png - Heart rate below normal (<60 BPM)
+4. device_connection.png - Device connectivity information
+
+Please refer to screenshots/README.md for detailed guidelines on taking these screenshots.
+
+Once you have taken the screenshots, save them in this directory with the exact filenames listed above. 
