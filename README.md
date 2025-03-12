@@ -169,10 +169,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
 ## Acknowledgements
 
 - The heart rate analysis ranges are based on generally accepted medical guidelines
@@ -188,13 +184,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-## Note about Assets
-
-This repository includes SVG files for the logo and architecture diagram in the `assets` folder. For best display on GitHub:
-
-1. Convert the SVG files to PNG using an online converter like [SVG to PNG](https://svgtopng.com/)
-2. Save the converted files with the same names in the assets folder
-
-## Note about Screenshots
-
-Please refer to the `screenshots/README.md` file for detailed guidelines on taking screenshots for this README.
