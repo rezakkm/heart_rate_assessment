@@ -50,6 +50,7 @@ dependencies:
   # blue_thermal_printer: ^1.2.3
   collection: ^1.18.0
   dartz: ^0.10.1
+  flutter_native_splash: ^2.3.10
 
 
 dev_dependencies:
@@ -139,13 +140,27 @@ flutter_native_splash:
   android: true
   ios: true
   web: false
-  color: "#ffffff"
+  
+  # Background color
+  color: "#e8eaf6"
   image: assets/app_icon/splash_icon.png
-  color_dark: "#ffffff"
+  
+  # Dark mode
+  color_dark: "#303F9F"
   image_dark: assets/app_icon/splash_icon.png
-
+  
+  # Fullscreen mode
+  fullscreen: true
+  
+  # Android 12+ supports a splash screen icon
   android_12:
     image: assets/app_icon/splash_icon.png
-    icon_background_color: "#ffffff"
+    icon_background_color: "#e8eaf6"
     image_dark: assets/app_icon/splash_icon.png
-    icon_background_color_dark: "#ffffff"
+    icon_background_color_dark: "#303F9F"
+    
+  # The following adds the app name below the logo (optional)
+  # branding: assets/branding.png
+  # branding_dark: assets/branding_dark.png
+  
+  # Android and iOS splash screens will be generated automatically

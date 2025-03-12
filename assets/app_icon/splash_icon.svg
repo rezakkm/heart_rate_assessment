@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="heartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B6B" />
+      <stop offset="100%" style="stop-color:#FF3366" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Heart Shape with transparent background -->
+  <g transform="translate(212, 212) scale(0.6)">
+    <path d="M512,140 C580,60 820,60 820,280 C820,500 512,760 512,760 C512,760 204,500 204,280 C204,60 444,60 512,140 Z" 
+          fill="url(#heartGradient)" 
+          stroke="#e0e0e0" 
+          stroke-width="8" />
+    
+    <!-- ECG Line -->
+    <path d="M256,512 L400,512 L425,410 L475,614 L512,260 L549,614 L599,410 L624,512 L768,512" 
+          fill="none" 
+          stroke="white" 
+          stroke-width="20" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
+  </g>
+</svg> 
