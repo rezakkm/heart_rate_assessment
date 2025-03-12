@@ -78,7 +78,7 @@ This application follows Clean Architecture principles, with a clear separation 
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/yourusername/heart_rate_monitor.git
+git clone https://github.com/rezakkm/heart_rate_assessment.git
 cd heart_rate_monitor
 ```
 
