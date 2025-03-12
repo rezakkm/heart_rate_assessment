@@ -2,7 +2,7 @@ import Flutter
 import UIKit
 import os.log
 
-@UIApplicationMain
+@main
 @objc class AppDelegate: FlutterAppDelegate {
   // The heart rate module instance
   private var heartRateModule: HeartRateModule?
