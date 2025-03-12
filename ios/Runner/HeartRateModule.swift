@@ -4,24 +4,73 @@ import os.log
 
 /// HeartRateModule that generates random heart rate values and simulates device connectivity
 class HeartRateModule: NSObject, FlutterStreamHandler {
+    // Flutter channels
+    private let methodChannel: FlutterMethodChannel
+    private let eventChannel: FlutterEventChannel
+    
     // Flutter event sink
     private var eventSink: FlutterEventSink?
     private var timer: Timer?
     
     // Configuration parameters
-    private let updateIntervalSec = 5.0 // 5 seconds
+    private let updateIntervalSec = 1.0 // 1 second
     
-    // Heart rate generator
-    private let heartRateGenerator = HeartRateGenerator()
+    // Heart rate ranges
+    private let normalRange = 60...100
+    private let lowRange = 40..<60
+    private let elevatedRange = 101...120
+    private let highRange = 121...140
+    private let criticalRange = 141...180
+    
+    // Current simulation state
+    private var currentHeartRate = 75
+    private var heartRateCategory = "NORMAL"
+    private var abnormalReadingProbability = 0.05
     
     // Simulated device
     private var device = DeviceInfo.random()
+    private var deviceUpdateCounter = 0
     
     private let logger = OSLog(subsystem: "com.example.heart_rate_assessment", category: "HeartRateModule")
     
-    override init() {
+    init(messenger: FlutterBinaryMessenger) {
+        // Initialize channels
+        methodChannel = FlutterMethodChannel(
+            name: "com.example.heart_rate_assessment/heart_rate_method",
+            binaryMessenger: messenger
+        )
+        
+        eventChannel = FlutterEventChannel(
+            name: "com.example.heart_rate_assessment/heart_rate_stream",
+            binaryMessenger: messenger
+        )
+        
         super.init()
+        
+        // Set up method channel handlers
+        setupMethodChannel()
+        
+        // Set up event channel
+        eventChannel.setStreamHandler(self)
+        
         os_log("HeartRateModule initialized with device: %@", log: logger, type: .info, device.name)
+    }
+    
+    private func setupMethodChannel() {
+        methodChannel.setMethodCallHandler { [weak self] (call, result) in
+            guard let self = self else { return }
+            
+            switch call.method {
+            case "startHeartRateMonitoring":
+                self.startHeartRateMonitoring()
+                result(true)
+            case "stopHeartRateMonitoring":
+                self.stopHeartRateMonitoring()
+                result(true)
+            default:
+                result(FlutterMethodNotImplemented)
+            }
+        }
     }
     
     // MARK: - FlutterStreamHandler protocol
@@ -29,25 +78,24 @@ class HeartRateModule: NSObject, FlutterStreamHandler {
     func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
         os_log("Stream is being listened to", log: logger, type: .debug)
         eventSink = events
-        startGeneratingHeartRateData()
         return nil
     }
     
     func onCancel(withArguments arguments: Any?) -> FlutterError? {
         os_log("Stream is no longer being listened to", log: logger, type: .debug)
-        stopGeneratingHeartRateData()
+        stopHeartRateMonitoring()
         eventSink = nil
         return nil
     }
     
     // MARK: - Public methods
     
-    func startGeneratingHeartRateData() {
-        os_log("Starting heart rate generation", log: logger, type: .debug)
-        stopGeneratingHeartRateData() // Ensure no duplicate timers
+    func startHeartRateMonitoring() {
+        os_log("Starting heart rate monitoring", log: logger, type: .debug)
+        stopHeartRateMonitoring() // Ensure no duplicate timers
         
-        // Update device connection status
-        device.connectionStatus = .connected
+        // Reset device if needed
+        device = DeviceInfo.random()
         
         // Generate and send first value immediately
         generateAndSendHeartRate()
@@ -62,15 +110,10 @@ class HeartRateModule: NSObject, FlutterStreamHandler {
         )
     }
     
-    func stopGeneratingHeartRateData() {
-        os_log("Stopping heart rate generation", log: logger, type: .debug)
+    func stopHeartRateMonitoring() {
+        os_log("Stopping heart rate monitoring", log: logger, type: .debug)
         timer?.invalidate()
         timer = nil
-        
-        // Update device connection status if it was previously connected
-        if device.connectionStatus == .connected || device.connectionStatus == .ready {
-            device.connectionStatus = .disconnected
-        }
     }
     
     // MARK: - Private methods
@@ -85,68 +128,88 @@ class HeartRateModule: NSObject, FlutterStreamHandler {
             return
         }
         
-        let heartRate = heartRateGenerator.generateHeartRateValue()
+        // Update device status occasionally
+        deviceUpdateCounter += 1
+        if deviceUpdateCounter >= 5 {
+            updateDeviceStatus()
+            deviceUpdateCounter = 0
+        }
         
-        // Occasionally update device status to simulate real-world behavior
-        updateDeviceStatus()
+        // Generate a heart rate value
+        let useAbnormalReading = Double.random(in: 0...1) < abnormalReadingProbability
         
-        // Create a dictionary with heart rate value, timestamp, and device info
-        let heartRateData: [String: Any] = [
-            "heartRate": heartRate,
-            "timestamp": Date().timeIntervalSince1970,
-            "device": device.toDictionary()
+        if useAbnormalReading {
+            // Generate an abnormal reading occasionally
+            let abnormalCategories = ["LOW", "ELEVATED", "HIGH", "CRITICAL"]
+            heartRateCategory = abnormalCategories.randomElement() ?? "ELEVATED"
+            
+            switch heartRateCategory {
+            case "LOW":
+                currentHeartRate = Int.random(in: lowRange)
+            case "ELEVATED":
+                currentHeartRate = Int.random(in: elevatedRange)
+            case "HIGH":
+                currentHeartRate = Int.random(in: highRange)
+            case "CRITICAL":
+                currentHeartRate = Int.random(in: criticalRange)
+            default:
+                currentHeartRate = Int.random(in: normalRange)
+            }
+        } else {
+            // Most of the time, generate values within normal range
+            heartRateCategory = "NORMAL"
+            
+            // Small random fluctuation around the current value
+            let fluctuation = Int.random(in: -5...5)
+            currentHeartRate += fluctuation
+            
+            // Ensure it stays within normal range
+            if currentHeartRate < normalRange.lowerBound {
+                currentHeartRate = normalRange.lowerBound + Int.random(in: 0...5)
+            } else if currentHeartRate > normalRange.upperBound {
+                currentHeartRate = normalRange.upperBound - Int.random(in: 0...5)
+            }
+        }
+        
+        // Create the heart rate data
+        let timestamp = Date().timeIntervalSince1970 * 1000
+        
+        var heartRateData: [String: Any] = [
+            "heartRate": currentHeartRate,
+            "timestamp": timestamp
         ]
         
-        os_log("Sending heart rate: %d BPM", log: logger, type: .debug, heartRate)
+        // Add device info
+        heartRateData["device"] = device.toDictionary()
+        
+        os_log("Sending heart rate: %d BPM", log: logger, type: .debug, currentHeartRate)
         sink(heartRateData)
     }
     
     private func updateDeviceStatus() {
-        // Occasionally update battery level (decreasing)
-        if Int.random(in: 0..<10) == 0 && device.batteryLevel > 20 {
+        // Update battery level - slowly decrease
+        if device.batteryLevel > 10 {
             device.batteryLevel -= Int.random(in: 1...3)
-            os_log("Battery level updated to %d%%", log: logger, type: .debug, device.batteryLevel)
-        }
-        
-        // Occasionally fluctuate signal strength
-        if Int.random(in: 0..<5) == 0 {
-            let fluctuation = Int.random(in: -5...5)
-            device.signalStrength = max(-95, min(-40, device.signalStrength + fluctuation))
-            os_log("Signal strength updated to %d dBm", log: logger, type: .debug, device.signalStrength)
-            
-            // If signal is very weak, accuracy might decrease
-            if device.signalStrength < -85 && Int.random(in: 0..<3) == 0 {
-                device.accuracy = .poor
-                os_log("Accuracy degraded to 'poor' due to weak signal", log: logger, type: .debug)
-            } else if device.signalStrength > -70 && device.accuracy == .poor && Int.random(in: 0..<3) == 0 {
-                device.accuracy = .good
-                os_log("Accuracy improved to 'good'", log: logger, type: .debug)
+            if device.batteryLevel < 0 {
+                device.batteryLevel = 0
             }
         }
         
-        // Very rarely simulate connection issues
-        if Int.random(in: 0..<100) == 0 && device.connectionStatus == .connected {
-            // Save current status to restore later
-            let previousStatus = device.connectionStatus
-            
-            // Change to error status
-            device.connectionStatus = .error
-            os_log("Connection became unstable", log: logger, type: .debug)
-            
-            // Schedule return to normal after a short time
-            DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) { [weak self] in
-                guard let self = self else { return }
-                self.device.connectionStatus = previousStatus
-                os_log("Connection returned to normal", log: self.logger, type: .debug)
-            }
+        // Update signal strength - fluctuate
+        let signalChange = Int.random(in: -1...1)
+        device.signalStrength += signalChange
+        if device.signalStrength < 1 {
+            device.signalStrength = 1
+        } else if device.signalStrength > 5 {
+            device.signalStrength = 5
         }
-    }
-    
-    func simulateError() {
-        os_log("Manually sending error for testing", log: logger, type: .error)
-        eventSink?(FlutterError(code: "HEART_RATE_ERROR", 
-                               message: "Failed to generate heart rate data", 
-                               details: nil))
+        
+        // Simulate occasional connection issues
+        if Double.random(in: 0...1) < 0.05 {
+            device.connectionStatus = ["CONNECTED", "CONNECTING", "UNSTABLE"].randomElement() ?? "CONNECTED"
+        } else {
+            device.connectionStatus = "CONNECTED"
+        }
     }
 }
 
