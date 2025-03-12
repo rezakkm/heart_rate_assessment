@@ -36,12 +36,12 @@ class HeartRateModule: NSObject, FlutterStreamHandler {
     init(messenger: FlutterBinaryMessenger) {
         // Initialize channels
         methodChannel = FlutterMethodChannel(
-            name: "com.example.heart_rate_assessment/heart_rate_method",
+            name: "com.example.heart_rate_assessment/heart_rate_control",
             binaryMessenger: messenger
         )
         
         eventChannel = FlutterEventChannel(
-            name: "com.example.heart_rate_assessment/heart_rate_stream",
+            name: "com.example.heart_rate_assessment/heart_rate",
             binaryMessenger: messenger
         )
         
