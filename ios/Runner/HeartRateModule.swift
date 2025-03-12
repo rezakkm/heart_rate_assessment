@@ -148,4 +148,68 @@ class HeartRateModule: NSObject, FlutterStreamHandler {
                                message: "Failed to generate heart rate data", 
                                details: nil))
     }
+}
+
+// MARK: - Device Info Model
+struct DeviceInfo {
+    var id: String
+    var name: String
+    var type: String
+    var manufacturer: String
+    var firmwareVersion: String
+    var batteryLevel: Int
+    var signalStrength: Int
+    var connectionStatus: String
+    var accuracy: String
+    
+    func toDictionary() -> [String: Any] {
+        return [
+            "id": id,
+            "name": name,
+            "type": type,
+            "manufacturer": manufacturer,
+            "firmwareVersion": firmwareVersion,
+            "batteryLevel": batteryLevel,
+            "signalStrength": signalStrength,
+            "connectionStatus": connectionStatus,
+            "accuracy": accuracy,
+            "signalDescription": getSignalDescription()
+        ]
+    }
+    
+    func getSignalDescription() -> String {
+        switch signalStrength {
+        case 1:
+            return "Very Weak"
+        case 2:
+            return "Weak"
+        case 3:
+            return "Moderate"
+        case 4:
+            return "Good"
+        case 5:
+            return "Excellent"
+        default:
+            return "Unknown"
+        }
+    }
+    
+    static func random() -> DeviceInfo {
+        let deviceNames = ["HeartSense Pro", "CardioMonitor X2", "BeatMaster Plus", "PulseTrack Elite", "VitalScan Ultra"]
+        let deviceTypes = ["PPG Sensor", "ECG Monitor", "Dual Mode Sensor", "Multi-Parameter Monitor"]
+        let manufacturers = ["HealthTech", "CardioInnovations", "MedSense", "VitalMetrics", "BioTech Solutions"]
+        let accuracyLevels = ["High", "Medical Grade", "Consumer", "Research Grade", "Clinical"]
+        
+        return DeviceInfo(
+            id: UUID().uuidString,
+            name: deviceNames.randomElement() ?? "HeartSense Pro",
+            type: deviceTypes.randomElement() ?? "PPG Sensor",
+            manufacturer: manufacturers.randomElement() ?? "HealthTech",
+            firmwareVersion: "v\(Int.random(in: 1...5)).\(Int.random(in: 0...9)).\(Int.random(in: 0...9))",
+            batteryLevel: Int.random(in: 50...100),
+            signalStrength: Int.random(in: 3...5),
+            connectionStatus: "CONNECTED",
+            accuracy: accuracyLevels.randomElement() ?? "High"
+        )
+    }
 } 

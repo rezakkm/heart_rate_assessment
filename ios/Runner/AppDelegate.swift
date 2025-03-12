@@ -17,44 +17,8 @@ import os.log
     
     os_log("Setting up Flutter channels", log: logger, type: .info)
     
-    // Set up the heart rate event channel
-    let heartRateChannel = FlutterEventChannel(
-      name: "com.example.heart_rate_assessment/heart_rate",
-      binaryMessenger: controller.binaryMessenger
-    )
-    
-    // Set up the heart rate control method channel
-    let heartRateControlChannel = FlutterMethodChannel(
-      name: "com.example.heart_rate_assessment/heart_rate_control",
-      binaryMessenger: controller.binaryMessenger
-    )
-    
-    // Handle method calls from Flutter
-    heartRateControlChannel.setMethodCallHandler { [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
-      guard let self = self else { return }
-      
-      os_log("Received method call: %@", log: self.logger, type: .debug, call.method)
-      
-      switch call.method {
-      case "startHeartRateMonitoring":
-        os_log("Starting heart rate monitoring", log: self.logger, type: .debug)
-        self.heartRateModule?.startGeneratingHeartRateData()
-        result(true)
-      case "stopHeartRateMonitoring":
-        os_log("Stopping heart rate monitoring", log: self.logger, type: .debug)
-        self.heartRateModule?.stopGeneratingHeartRateData()
-        result(true)
-      default:
-        os_log("Unknown method: %@", log: self.logger, type: .error, call.method)
-        result(FlutterMethodNotImplemented)
-      }
-    }
-    
-    // Create the heart rate module
-    heartRateModule = HeartRateModule()
-    
-    // Register the event channel for heart rate data
-    heartRateChannel.setStreamHandler(heartRateModule)
+    // Create the heart rate module with the controller's binary messenger
+    heartRateModule = HeartRateModule(messenger: controller.binaryMessenger)
     
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
@@ -62,7 +26,7 @@ import os.log
   
   // Stop heart rate monitoring when app enters background
   override func applicationDidEnterBackground(_ application: UIApplication) {
-    heartRateModule?.stopGeneratingHeartRateData()
+    heartRateModule?.stopHeartRateMonitoring()
     super.applicationDidEnterBackground(application)
   }
   
@@ -70,12 +34,12 @@ import os.log
   override func applicationDidBecomeActive(_ application: UIApplication) {
     super.applicationDidBecomeActive(application)
     os_log("App became active", log: logger, type: .debug)
-    heartRateModule?.startGeneratingHeartRateData()
+    // Note: We don't automatically start monitoring here, it should be triggered by user action
   }
   
   override func applicationWillResignActive(_ application: UIApplication) {
     super.applicationWillResignActive(application)
     os_log("App will resign active", log: logger, type: .debug)
-    heartRateModule?.stopGeneratingHeartRateData()
+    heartRateModule?.stopHeartRateMonitoring()
   }
 }
